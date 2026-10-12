@@ -6,6 +6,7 @@ import { applyVisualizerTuning, type VisualizerTuningBundle } from './tuningRegi
 import '@/index.css';
 
 export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './tuningRegistry';
+export { FoliaModePanel, listPanelModes, type FoliaModePanelProps } from './settingsPanels';
 
 export type VisualizerBundleProps = {
   mode: string;
