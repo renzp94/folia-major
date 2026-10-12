@@ -42,8 +42,9 @@ export default defineConfig({
     outDir: path.resolve(__dirname, '../echo-folia-plugin/folia'),
     emptyOutDir: true,
     cssCodeSplit: false,
-    // Vite 8 用 oxc/rolldown 做压缩；esbuild 已不是自带依赖，指定它会报错。
-    minify: 'oxc',
+    // 注意：lib 构建下 `minify: 'oxc'` 只做变量改名、**不压空白**（实测产物 18.5 万行 /
+    // 10.7 MB）。用 `true` 走默认压缩器才会真正压缩。
+    minify: true,
     lib: {
       entry: path.resolve(__dirname, './src/visualizer-bundle/index.ts'),
       formats: ['es'],
