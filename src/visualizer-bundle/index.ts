@@ -26,16 +26,23 @@ const BundleRenderer: React.FC<VisualizerBundleProps> = ({ mode, ...props }) =>
   );
 
 let root: Root | null = null;
+let rootEl: HTMLElement | null = null;
 
 export const mountVisualizer = (el: HTMLElement, props: VisualizerBundleProps): void => {
-  unmountVisualizer();
-  root = createRoot(el);
+  // 复用已有 root：宿主每前进一行就调一次本函数，若每次 createRoot 会反复销毁
+  // 重建整棵 React 树（动画重来、后续 WebGL 模式上下文 churn）。容器换了才重建。
+  if (!root || rootEl !== el) {
+    unmountVisualizer();
+    root = createRoot(el);
+    rootEl = el;
+  }
   root.render(React.createElement(BundleRenderer, props));
 };
 
 export const unmountVisualizer = (): void => {
   root?.unmount();
   root = null;
+  rootEl = null;
 };
 
 import { motionValue as fmMotionValue } from 'framer-motion';
