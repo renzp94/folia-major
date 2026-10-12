@@ -2,7 +2,10 @@ import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { MotionValue } from 'framer-motion';
 import { getEntry } from './registry';
+import { applyVisualizerTuning, type VisualizerTuningBundle } from './tuningRegistry';
 import '@/index.css';
+
+export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './tuningRegistry';
 
 export type VisualizerBundleProps = {
   mode: string;
@@ -14,17 +17,23 @@ export type VisualizerBundleProps = {
   audioBands: unknown;
   showText?: boolean;
   onLyricLineSeek?: (lyricTimeSec: number) => void;
-  background?: { transparent: boolean };
+  background?: { transparent?: boolean; mode?: string };
+  /** 各模式的 tuning：{ [mode]: tuning }。缺省即用该模式的出厂参数。 */
+  visualizerTunings?: VisualizerTuningBundle;
 };
 
 // 用 createElement 而不是 JSX：本文件按计划是 .ts（非 .tsx），JSX 不会被解析。
-const BundleRenderer: React.FC<VisualizerBundleProps> = ({ mode, ...props }) =>
-  // entry.render 里包着 React.lazy，Suspense 边界是必需的（见 definition.ts 的说明）
-  React.createElement(
+const BundleRenderer: React.FC<VisualizerBundleProps> = ({ mode, ...props }) => {
+  // 与上游 VisualizerRenderer 一致：先把该模式的 tuning 合进 props，再交给模式渲染器。
+  // 不传 tuning 时原样透传（＝出厂参数）——这曾是观感与原版有差距的原因之一。
+  const resolved = applyVisualizerTuning(mode, props as never, props.visualizerTunings);
+  return React.createElement(
+    // entry.render 里包着 React.lazy，Suspense 边界是必需的（见 definition.ts 的说明）
     React.Suspense,
     { fallback: null },
-    getEntry(mode).render(props as never),
+    getEntry(mode).render(resolved as never),
   );
+};
 
 let root: Root | null = null;
 let rootEl: HTMLElement | null = null;
