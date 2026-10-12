@@ -2,10 +2,10 @@ import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { MotionValue } from 'framer-motion';
 import { getEntry } from './registry';
-import { applyVisualizerTuning, type VisualizerTuningBundle } from './tuningRegistry';
+import { applyVisualizerTuning, type VisualizerTuningBundle } from './folioTuning';
 import '@/index.css';
 
-export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './tuningRegistry';
+export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './folioTuning';
 import { FoliaModePanel, type FoliaModePanelProps } from './settingsPanels';
 export { FoliaModePanel, listPanelModes, type FoliaModePanelProps } from './settingsPanels';
 

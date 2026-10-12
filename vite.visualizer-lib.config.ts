@@ -33,6 +33,18 @@ export default defineConfig({
       { find: /^.*mods\/folium\/.+$/, replacement: stub('folium.ts') },
       // 背景注册表用 import.meta.glob 发现全部背景 entry，绕不过去就换掉整个渲染器
       { find: /^.*\/backgrounds\/VisualizerBackgroundRenderer$/, replacement: stub('backgroundRenderer.tsx') },
+      // 下面两个**注册表模块本身**也必须换掉：只要产物里任何模块 import 了它们
+      // （各模式入口、设置面板、VisualizerPresetGroup 等都会），import.meta.glob 展开出来的
+      // 代码就会进产物，而它在运行时读 undefined 的模块 —— 症状是 bundle 一加载就抛
+      // "Cannot read properties of undefined (reading 'default')"、整块皮肤变黑。
+      {
+        find: /^.*\/tuningRegistry$/,
+        replacement: path.resolve(__dirname, './src/visualizer-bundle/tuningAdapterStub.ts'),
+      },
+      {
+        find: /^.*\/backgrounds\/registry$/,
+        replacement: path.resolve(__dirname, './src/visualizer-bundle/backgroundRegistry.tsx'),
+      },
       // 视频层只在主应用界面挂载，但 static import 会把整条播放器 store 链拉进来
       { find: /^.*\/videoLayer\/VideoLayer$/, replacement: stub('videoLayer.tsx') },
       { find: /^@\//, replacement: `${src}/` },
