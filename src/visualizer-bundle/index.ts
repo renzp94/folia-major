@@ -13,6 +13,7 @@ export type VisualizerBundleProps = {
   audioPower: MotionValue<number>;
   audioBands: unknown;
   showText?: boolean;
+  onLyricLineSeek?: (lyricTimeSec: number) => void;
   background?: { transparent: boolean };
 };
 
