@@ -37,3 +37,21 @@ export const unmountVisualizer = (): void => {
   root?.unmount();
   root = null;
 };
+
+import { motionValue as fmMotionValue } from 'framer-motion';
+
+/** 供宿主侧构造 MotionValue（插件环境没有 framer-motion）。 */
+export const motionValue = fmMotionValue;
+
+/** 构造一组全零的音频信号，作为无频谱时的安全降级。 */
+export const createSilentAudio = () => ({
+  audioPower: fmMotionValue(0),
+  audioBands: {
+    bass: fmMotionValue(0),
+    lowMid: fmMotionValue(0),
+    mid: fmMotionValue(0),
+    vocal: fmMotionValue(0),
+    treble: fmMotionValue(0),
+    spectrum: fmMotionValue(new Uint8Array(0)),
+  },
+});
