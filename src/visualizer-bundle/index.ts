@@ -6,6 +6,7 @@ import { applyVisualizerTuning, type VisualizerTuningBundle } from './tuningRegi
 import '@/index.css';
 
 export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './tuningRegistry';
+import { FoliaModePanel, type FoliaModePanelProps } from './settingsPanels';
 export { FoliaModePanel, listPanelModes, type FoliaModePanelProps } from './settingsPanels';
 
 export type VisualizerBundleProps = {
@@ -54,6 +55,25 @@ export const unmountVisualizer = (): void => {
   root?.unmount();
   root = null;
   rootEl = null;
+};
+
+// 设置面板用的独立 React root —— 与视觉内容分开，互不干扰（面板可能在视觉未挂载时就打开）。
+let panelRoot: Root | null = null;
+let panelEl: HTMLElement | null = null;
+
+export const mountModePanel = (el: HTMLElement, props: FoliaModePanelProps): void => {
+  if (!panelRoot || panelEl !== el) {
+    panelRoot?.unmount();
+    panelRoot = createRoot(el);
+    panelEl = el;
+  }
+  panelRoot.render(React.createElement(FoliaModePanel, props));
+};
+
+export const unmountModePanel = (): void => {
+  panelRoot?.unmount();
+  panelRoot = null;
+  panelEl = null;
 };
 
 import { motionValue as fmMotionValue } from 'framer-motion';
