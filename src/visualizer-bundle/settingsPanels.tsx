@@ -1,4 +1,9 @@
 import React from 'react';
+import {
+  VISUALIZER_BACKGROUND_REGISTRY,
+  getVisualizerBackgroundRegistryEntry,
+} from './backgroundRegistry';
+import type { VisualizerBackgroundSettingsProps } from '@/components/visualizer/backgrounds/definition';
 // 共享面板文件里放着 7 个模式的面板
 import {
   ClassicSettingsPanel,
@@ -16,7 +21,7 @@ import PendoloSettingsPanel from '@/components/visualizer/pendolo/PendoloSetting
 import SonnetSettingsPanel from '@/components/visualizer/sonnet/SonnetSettingsPanel';
 import TemperaSettingsPanel from '@/components/visualizer/tempera/TemperaSettingsPanel';
 
-/** 模式 → 上游参数面板组件（cadenza / still 没有专门面板）。 */
+/** 有专门参数面板的模式（宿主据此决定是否显示"模式参数"区块）。 */
 const PANELS: Record<string, React.FC<never>> = {
   classic: ClassicSettingsPanel as never,
   partita: PartitaSettingsPanel as never,
@@ -72,4 +77,50 @@ export const FoliaModePanel: React.FC<FoliaModePanelProps> = ({
     [`on${capitalized}TuningChange`]: onTuningChange,
   };
   return React.createElement(Panel, props);
+};
+
+// ── 背景设置（上游把背景也做成一套带面板的模式，与视觉模式平行）───────────────
+
+export type FoliaBackgroundModeOption = { mode: string; label: string };
+
+/** 可选背景模式（宿主据此渲染"背景"下拉）。默认是 latent。 */
+export const listBackgroundModes = (): FoliaBackgroundModeOption[] =>
+  VISUALIZER_BACKGROUND_REGISTRY.map((entry) => ({
+    mode: entry.mode,
+    label: entry.labelFallback || entry.mode,
+  }));
+
+export type FoliaBackgroundPanelProps = {
+  mode: string;
+  /** 该背景的配置（含 tuning）；宿主原样透传。 */
+  config?: unknown;
+  /** 上游面板用它回写配置；宿主只需给一个 patch 回调。 */
+  actions?: unknown;
+  isDaylight?: boolean;
+  theme?: unknown;
+};
+
+/**
+ * 按背景模式渲染上游的背景设置面板。
+ * 上游把它放在 `entry.renderSettingsPanel`（有些背景没有，返回 null）。
+ */
+export const FoliaBackgroundPanel: React.FC<FoliaBackgroundPanelProps> = ({
+  mode,
+  config,
+  actions,
+  isDaylight = false,
+  theme,
+}) => {
+  const entry = getVisualizerBackgroundRegistryEntry(mode as never);
+  if (!entry?.renderSettingsPanel) return null;
+  const props = {
+    config,
+    actions,
+    isDaylight,
+    theme,
+    t: (key: string) => key,
+    controlCardBg: 'transparent',
+    rangeInputClass: '',
+  } as VisualizerBackgroundSettingsProps;
+  return React.createElement(React.Fragment, null, entry.renderSettingsPanel(props));
 };

@@ -6,8 +6,20 @@ import { applyVisualizerTuning, type VisualizerTuningBundle } from './folioTunin
 import '@/index.css';
 
 export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './folioTuning';
-import { FoliaModePanel, type FoliaModePanelProps } from './settingsPanels';
-export { FoliaModePanel, listPanelModes, type FoliaModePanelProps } from './settingsPanels';
+import {
+  FoliaBackgroundPanel,
+  FoliaModePanel,
+  type FoliaBackgroundPanelProps,
+  type FoliaModePanelProps,
+} from './settingsPanels';
+export {
+  FoliaModePanel,
+  listPanelModes,
+  FoliaBackgroundPanel,
+  listBackgroundModes,
+  type FoliaModePanelProps,
+  type FoliaBackgroundPanelProps,
+} from './settingsPanels';
 
 export type VisualizerBundleProps = {
   mode: string;
@@ -74,6 +86,25 @@ export const unmountModePanel = (): void => {
   panelRoot?.unmount();
   panelRoot = null;
   panelEl = null;
+};
+
+// 背景设置面板用另一个独立 root（两套设置可能同时打开）。
+let bgPanelRoot: Root | null = null;
+let bgPanelEl: HTMLElement | null = null;
+
+export const mountBackgroundPanel = (el: HTMLElement, props: FoliaBackgroundPanelProps): void => {
+  if (!bgPanelRoot || bgPanelEl !== el) {
+    bgPanelRoot?.unmount();
+    bgPanelRoot = createRoot(el);
+    bgPanelEl = el;
+  }
+  bgPanelRoot.render(React.createElement(FoliaBackgroundPanel, props));
+};
+
+export const unmountBackgroundPanel = (): void => {
+  bgPanelRoot?.unmount();
+  bgPanelRoot = null;
+  bgPanelEl = null;
 };
 
 import { motionValue as fmMotionValue } from 'framer-motion';
