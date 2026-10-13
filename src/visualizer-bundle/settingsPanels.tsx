@@ -71,10 +71,27 @@ class PanelBoundary extends React.Component<
 
   render() {
     if (this.state.error) {
+      const error = this.state.error;
+      // 连堆栈一起给出来：产物是压缩过的，但行号能在源码里对回去，不然只能猜。
+      const stack = String(error?.stack ?? '')
+        .split('\n')
+        .slice(0, 4)
+        .join('\n');
       return React.createElement(
         'div',
-        { style: { fontSize: 12, lineHeight: 1.6, opacity: 0.8, color: '#e5484d', padding: '2px 0' } },
-        `面板渲染失败：${String(this.state.error?.message ?? this.state.error)}`,
+        {
+          style: {
+            padding: '4px 0',
+            fontSize: 11,
+            lineHeight: 1.55,
+            color: '#e5484d',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+            maxHeight: 160,
+            overflow: 'auto',
+          },
+        },
+        `面板渲染失败：${String(error?.message ?? error)}\n${stack}`,
       );
     }
     return this.props.children;
