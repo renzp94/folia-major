@@ -54,9 +54,9 @@ export default defineConfig({
     outDir: path.resolve(__dirname, '../echo-folia-plugin/folia'),
     emptyOutDir: true,
     cssCodeSplit: false,
-    // 注意：lib 构建下 `minify: 'oxc'` 只做变量改名、**不压空白**（实测产物 18.5 万行 /
-    // 10.7 MB）。用 `true` 走默认压缩器才会真正压缩。
-    minify: true,
+    // 压缩不在这里配：vite 8 走 rolldown + oxc，顶层的 minify 只做变量改名、不压空白；
+    // 而 'esbuild' 也已经不可用了（vite 不再内置它，要单独装）。真正的开关在
+    // rollupOptions.output.minify —— 见下面的 { mangle, compress }。
     lib: {
       entry: path.resolve(__dirname, './src/visualizer-bundle/index.ts'),
       formats: ['es'],
@@ -66,7 +66,12 @@ export default defineConfig({
     rollupOptions: {
       // classic 的 renderer 是 React.lazy，默认会拆出独立 chunk；插件侧按单文件加载，
       // 必须把所有 chunk 内联进 visualizer.js。
-      output: { codeSplitting: false },
+      output: {
+        codeSplitting: false,
+        // mangle 改短变量名、compress 去空白与冗余。只写 minify: true 时 oxc 只做前者，
+      // 产物仍是 19.8 万行 / 11.3 MB。
+        minify: { mangle: true, compress: true },
+      },
     },
   },
 });
