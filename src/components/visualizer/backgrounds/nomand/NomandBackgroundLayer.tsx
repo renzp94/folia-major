@@ -56,7 +56,10 @@ const NomandBackgroundLayer: React.FC<NomandBackgroundLayerProps> = ({
             image: sourceUrl,
             fit: 'cover' as const,
             minPixelRatio: 1,
-            maxPixelCount: 1920 * 1080,
+            // 上游原值 1920 * 1080 在 Retina 上仍会超出（1284×950 的窗口就要 ≈4.88M
+            // 设备像素），画布被缩小再拉伸导致发虚。它是上限而非固定尺寸，调高只影响
+            // 大窗口；与 latent 的 MAX_SHADER_PIXELS 保持一致。
+            maxPixelCount: 3840 * 2160,
             style: { width: '100%', height: '100%' },
         };
 

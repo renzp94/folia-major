@@ -26,7 +26,11 @@ interface LatentBackgroundProps {
     tuning?: LatentBackgroundTuning;
 }
 
-const MAX_SHADER_PIXELS = 1280 * 720;
+// 上游原值 1280 * 720 在 Retina（dpr=2）上必然超出：画布被等比缩小后再拉伸填满，
+// 渐变与抖动颗粒明显发虚 —— 一个 1284×950 的窗口就要 2568×1900 ≈ 4.88M 像素。
+// 这是**上限**而不是固定尺寸（shader 库取 min(1, 上限/需求)），容器更小仍按实际
+// 尺寸渲染，所以调高只影响大窗口，小窗口的开销不变。
+const MAX_SHADER_PIXELS = 3840 * 2160;
 const PAUSED_SPEED_SCALE = 0.12;
 const normalizeAudio = (value: number) => Math.min(1, Math.max(0, value / 255));
 const clampShaderSpeed = (value: number) => Math.min(2, Math.max(0, value));
