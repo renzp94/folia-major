@@ -17,6 +17,7 @@ import {
 export {
   FoliaModePanel,
   listPanelModes,
+  withBackgroundTuning,
   FoliaBackgroundPanel,
   FoliaBackgroundQuickControls,
   listBackgroundModes,
@@ -44,7 +45,13 @@ export type VisualizerBundleProps = {
 const BundleRenderer: React.FC<VisualizerBundleProps> = ({ mode, ...props }) => {
   // 与上游 VisualizerRenderer 一致：先把该模式的 tuning 合进 props，再交给模式渲染器。
   // 不传 tuning 时原样透传（＝出厂参数）——这曾是观感与原版有差距的原因之一。
-  const resolved = applyVisualizerTuning(mode, props as never, props.visualizerTunings);
+  // 背景那份同样要补出厂值：渲染层直接读 config[mode].tuning 的各个键，
+  // 局部对象会让它读到 undefined（镜台的 NaN 就是这么来的）。
+  const resolved = applyVisualizerTuning(
+    mode,
+    { ...props, background: withBackgroundTuning(props.background?.mode, props.background) } as never,
+    props.visualizerTunings,
+  );
   return React.createElement(
     // entry.render 里包着 React.lazy，Suspense 边界是必需的（见 definition.ts 的说明）
     React.Suspense,

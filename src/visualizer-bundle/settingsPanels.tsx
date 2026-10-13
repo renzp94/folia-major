@@ -1,5 +1,11 @@
 import React from 'react';
 import {
+  DEFAULT_LATENT_BACKGROUND_TUNING,
+  DEFAULT_MONET_BACKGROUND_TUNING,
+  DEFAULT_NOMAND_BACKGROUND_TUNING,
+  DEFAULT_SORA_BACKGROUND_TUNING,
+} from '@/types';
+import {
   VISUALIZER_BACKGROUND_REGISTRY,
   getVisualizerBackgroundRegistryEntry,
 } from './backgroundRegistry';
@@ -139,6 +145,34 @@ export const listBackgroundModes = (): FoliaBackgroundModeOption[] =>
     label: entry.labelFallback || entry.mode,
   }));
 
+/** 各背景的出厂参数。扁平型背景（common / url）没有 tuning 这一层，不在表里。 */
+const BACKGROUND_TUNING_DEFAULTS: Record<string, unknown> = {
+  latent: DEFAULT_LATENT_BACKGROUND_TUNING,
+  monet: DEFAULT_MONET_BACKGROUND_TUNING,
+  nomand: DEFAULT_NOMAND_BACKGROUND_TUNING,
+  sora: DEFAULT_SORA_BACKGROUND_TUNING,
+};
+
+/**
+ * 给该背景的 tuning 补上出厂值，再交给下游（面板与渲染层都要）。
+ *
+ * 设置面板回传的是**局部**更新（只含动过的键），上来存的就是这一份；上游本身存的是
+ * 完整对象，所以它那边遇不到。不补的话面板里的滑杆会拿到 undefined ——
+ * `SliderRow` 的默认 `format` 是 `next => next.toFixed(1)`，直接抛 TypeError，
+ * React 把整块面板卸掉，看起来就是"这个背景没有参数"。
+ */
+export const withBackgroundTuning = (mode: string | undefined, config: unknown) => {
+  const defaults = mode ? BACKGROUND_TUNING_DEFAULTS[mode] : undefined;
+  if (!defaults || !mode) return config;
+  const all = config as Record<string, { tuning?: Record<string, unknown> } | undefined> | undefined;
+  // 没有这一档就原样返回 —— 那种情况下游自己会用 `?? DEFAULT_*` 兜底。
+  if (!all?.[mode]) return config;
+  return {
+    ...all,
+    [mode]: { ...all[mode], tuning: { ...(defaults as object), ...(all[mode]?.tuning ?? {}) } },
+  };
+};
+
 export type FoliaBackgroundPanelProps = {
   mode: string;
   /** 该背景的配置（含 tuning）；宿主原样透传。 */
@@ -164,7 +198,7 @@ export const FoliaBackgroundPanel: React.FC<FoliaBackgroundPanelProps> = ({
   const entry = getVisualizerBackgroundRegistryEntry(mode as never);
   if (!entry?.renderSettingsPanel) return null;
   const props = {
-    config,
+    config: withBackgroundTuning(mode, config),
     actions,
     isDaylight,
     theme,
@@ -206,7 +240,13 @@ export const FoliaBackgroundQuickControls: React.FC<FoliaBackgroundQuickControls
   const { t } = useTranslation();
   const entry = getVisualizerBackgroundRegistryEntry(mode as never);
   if (!entry?.renderQuickControls) return null;
-  const props = { config, actions, isDaylight, theme, t } as VisualizerBackgroundQuickControlsProps;
+  const props = {
+    config: withBackgroundTuning(mode, config),
+    actions,
+    isDaylight,
+    theme,
+    t,
+  } as VisualizerBackgroundQuickControlsProps;
   return React.createElement(
     PanelBoundary,
     null,
