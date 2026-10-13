@@ -12,6 +12,21 @@ import sonnetTuning from '@/components/visualizer/sonnet/tuning';
 import temperaTuning from '@/components/visualizer/tempera/tuning';
 import tiltTuning from '@/components/visualizer/tilt/tuning';
 import type { VisualizerSharedProps } from '@/components/visualizer/definition';
+import {
+  DEFAULT_CADENZA_TUNING,
+  DEFAULT_CAPPELLA_TUNING,
+  DEFAULT_CLADDAGH_TUNING,
+  DEFAULT_CLASSIC_TUNING,
+  DEFAULT_DIORAMA_TUNING,
+  DEFAULT_FUME_TUNING,
+  DEFAULT_LUMIERE_TUNING,
+  DEFAULT_MONET_TUNING,
+  DEFAULT_PARTITA_TUNING,
+  DEFAULT_PENDOLO_TUNING,
+  DEFAULT_SONNET_TUNING,
+  DEFAULT_TEMPERA_TUNING,
+  DEFAULT_TILT_TUNING,
+} from '@/types';
 
 // 手写替代上游的 components/visualizer/tuningRegistry.ts。
 // 上游用 import.meta.glob('./*/tuning.ts') 发现适配器（插件构建绕不过去），而这些适配器
@@ -51,8 +66,31 @@ for (const adapter of ADAPTERS) {
 }
 
 /**
+ * 各模式的出厂参数。**必须补这一层**：设置面板回传的是局部更新（只含动过的键），
+ * 而上游存的是完整对象 —— 直接透传的话渲染器会读到一堆 undefined。
+ * 多数模式逐键 `?? DEFAULT` 能兜住，diorama 不行：它 `clamp(t.motionAmount, …)`
+ * 算出 NaN，相机参数全成 NaN，画面直接不动。
+ */
+const DEFAULTS: Record<string, unknown> = {
+  classic: DEFAULT_CLASSIC_TUNING,
+  cadenza: DEFAULT_CADENZA_TUNING,
+  partita: DEFAULT_PARTITA_TUNING,
+  fume: DEFAULT_FUME_TUNING,
+  claddagh: DEFAULT_CLADDAGH_TUNING,
+  cappella: DEFAULT_CAPPELLA_TUNING,
+  tilt: DEFAULT_TILT_TUNING,
+  diorama: DEFAULT_DIORAMA_TUNING,
+  monet: DEFAULT_MONET_TUNING,
+  pendolo: DEFAULT_PENDOLO_TUNING,
+  sonnet: DEFAULT_SONNET_TUNING,
+  tempera: DEFAULT_TEMPERA_TUNING,
+  lumiere: DEFAULT_LUMIERE_TUNING,
+};
+
+/**
  * 把某个模式的 tuning 合进渲染 props。与上游 applyVisualizerTuning 行为一致：
  * 没有适配器、或没给该模式的 tuning 时原样返回 props（即用出厂参数）。
+ * 给过 tuning 时先补出厂值，再叠用户那份（见 DEFAULTS）。
  */
 export const applyVisualizerTuning = (
   mode: string,
@@ -60,8 +98,11 @@ export const applyVisualizerTuning = (
   bundle?: VisualizerTuningBundle,
 ): VisualizerSharedProps => {
   const adapter = BY_MODE.get(mode);
-  const tuning = bundle?.[mode];
-  return adapter && tuning !== undefined ? adapter.apply(props, tuning as never) : props;
+  const saved = bundle?.[mode];
+  if (!adapter || saved === undefined) return props;
+  const defaults = DEFAULTS[mode];
+  const tuning = defaults ? { ...(defaults as object), ...(saved as object) } : saved;
+  return adapter.apply(props, tuning as never);
 };
 
 export const getVisualizerTuningModes = (): string[] => [...BY_MODE.keys()];
