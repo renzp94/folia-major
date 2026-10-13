@@ -533,8 +533,8 @@ const VisualizerMonet: React.FC<VisualizerMonetProps> = (props) => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1.2, ease: [0.25, 1, 0.5, 1], delay: 0.8 }}
                     // 上游是 h-10（40px 高）：在大窗口里只是右下角一条细带子，不留意看不见。
-                    // 高度提到 48px，宽度沿用上游的 min(450px, 55vw)。
-                    className="absolute bottom-0 left-0 z-20 h-12 overflow-hidden px-5 sm:px-8 lg:px-14"
+                    // 高度提到 120px；宽度沿用上游的 min(450px, 55vw)。
+                    className="absolute bottom-0 left-0 z-20 h-[7.5rem] overflow-hidden px-5 sm:px-8 lg:px-14"
                     style={{ width: 'min(450px, 55vw)' }}
                 >
                     <div className="h-full w-full">
