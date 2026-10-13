@@ -132,18 +132,31 @@ const VisualizerMonet: React.FC<VisualizerMonetProps> = (props) => {
         () => resolveThemeTranslationFontStack(subtitleTheme ?? theme),
         [subtitleTheme, theme],
     );
-    const fontScale = monetTuning.fontScale;
+    // 兜住非有限值：这两个因子只要有一个是 NaN，整条字号链就会静默失效 ——
+    // fontPx 变 NaN → 行高测不出（所有行 y 相同，叠在一起）→ rail 的
+    // `height: clamp(280px, 52vh, railMaxHeightPx)` 因为 NaN 被浏览器整条丢弃，
+    // 高度塌成 0，它自带的 overflow-hidden 再把绝对定位的歌词全裁掉。
+    // 上游的这两个值来自自己的 store，可以假定完整；宿主侧的调用方不一定。
+    const fontScale = Number.isFinite(monetTuning.fontScale) ? monetTuning.fontScale : 1;
     // Scales the whole composition up on very wide displays; 1 below 2xl, so nothing else changes.
     // Driven by the observed shell width so a resize re-lays the scene out instead of keeping the
     // width read at mount, and so an embedded preview scales by its own box, not by the display.
-    const largeScreenScale = resolveMonetLargeScreenScale(shellWidth);
-    const lyricFontPx = resolveClampFontPx(
-        1.34,
-        2.75,
-        2.28,
-    ) * fontScale * largeScreenScale;
-    const inactiveFontPx = resolveClampFontPx(1.08, 2, 1.48) * fontScale * largeScreenScale;
-    const translationFontPx = resolveClampFontPx(0.94, 1.28, 1.14) * fontScale * subtitleFontScale * largeScreenScale;
+    const rawLargeScreenScale = resolveMonetLargeScreenScale(shellWidth);
+    const largeScreenScale = Number.isFinite(rawLargeScreenScale) ? rawLargeScreenScale : 1;
+    // 同上：任一因子异常都要落回有限值，否则整条链静默失效（见上面 fontScale 的说明）。
+    const finite = (value: number, fallback: number) => (Number.isFinite(value) ? value : fallback);
+    const lyricFontPx = finite(
+        resolveClampFontPx(1.34, 2.75, 2.28) * fontScale * largeScreenScale,
+        resolveClampFontPx(1.34, 2.75, 2.28),
+    );
+    const inactiveFontPx = finite(
+        resolveClampFontPx(1.08, 2, 1.48) * fontScale * largeScreenScale,
+        resolveClampFontPx(1.08, 2, 1.48),
+    );
+    const translationFontPx = finite(
+        resolveClampFontPx(0.94, 1.28, 1.14) * fontScale * subtitleFontScale * largeScreenScale,
+        resolveClampFontPx(0.94, 1.28, 1.14),
+    );
     const rowMaxWidthPx = Math.round(MONET_ROW_BASE_MAX_WIDTH_PX * largeScreenScale);
     const portraitMaxPx = Math.round(MONET_PORTRAIT_BASE_MAX_PX * largeScreenScale);
     const portraitInnerMaxPx = Math.round(MONET_PORTRAIT_INNER_BASE_MAX_PX * largeScreenScale);
