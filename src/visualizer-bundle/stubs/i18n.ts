@@ -2,17 +2,40 @@
 // 结果是面板与快捷控制显示 "latentDisplayDithering" 这类英文标识符。
 // 现在接上 Folia 自己的中文词条（`i18n/locales/zh-CN.ts` 是一个纯嵌套对象，
 // 没有额外依赖，可以整份进 bundle）。找不到的词条仍按老规矩逐级兜底。
+//
+// 两件事必须分清楚：
+//
+// 1. **词条是空串 ≠ 词条不存在**。上游有几个词条的值就是 `''`（`ui.waitingForMusic`
+//    在三个语言文件里都是空的），本意是「这种状态下不显示文字」。早先这里用
+//    `if (text) return text`，把它们一并当成没找到，于是歌词页/壁纸在没播放时会
+//    渲染出 `waitingForMusic` 这个键名本身。
+// 2. **宿主可以覆盖文案**。读 globalThis 上的覆盖表（EchoMusic 插件设置里填的
+//    「未播放文案」就写在这里）。命中覆盖就用覆盖 —— 哪怕覆盖成空串，那也是用户的
+//    明确选择，不该再往下兜底。
 import zhCN from '@/i18n/locales/zh-CN';
 
 type TOptions = { defaultValue?: string } | string | undefined;
 
-const lookup = (key: string): string => {
+/** 宿主注入的文案覆盖表，键是 i18n key（如 `ui.waitingForMusic`）。 */
+const OVERRIDES_KEY = '__FOLIA_I18N_OVERRIDES__';
+
+const overrides = (): Record<string, string> => {
+  const value = (globalThis as Record<string, unknown>)[OVERRIDES_KEY];
+  return value && typeof value === 'object' ? (value as Record<string, string>) : {};
+};
+
+/** 查词条。返回 undefined 表示「没有这个词条」，返回 '' 表示「词条就是空」。 */
+const lookup = (key: string): string | undefined => {
+  const custom = overrides();
+  if (Object.prototype.hasOwnProperty.call(custom, key)) return custom[key];
+
   let node: unknown = zhCN;
   for (const part of key.split('.')) {
-    if (!node || typeof node !== 'object') return '';
+    if (!node || typeof node !== 'object') return undefined;
+    if (!Object.prototype.hasOwnProperty.call(node, part)) return undefined;
     node = (node as Record<string, unknown>)[part];
   }
-  return typeof node === 'string' ? node : '';
+  return typeof node === 'string' ? node : undefined;
 };
 
 const translate = (key: string, options?: TOptions): string => {
@@ -27,7 +50,7 @@ const translate = (key: string, options?: TOptions): string => {
   }
   // 词条优先：面板里用的是 i18n key，有中文就显示中文。
   const text = lookup(key);
-  if (text) return text;
+  if (text !== undefined) return text;
   if (options && typeof options === 'object' && typeof options.defaultValue === 'string') {
     return options.defaultValue;
   }

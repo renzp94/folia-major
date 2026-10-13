@@ -51,7 +51,7 @@ export default defineConfig({
     ],
   },
   build: {
-    outDir: path.resolve(__dirname, '../echo-folia-plugin/folia'),
+    outDir: path.resolve(__dirname, '../echo-plugins/echo-folia-plugin/folia'),
     emptyOutDir: true,
     cssCodeSplit: false,
     // 压缩不在这里配：vite 8 走 rolldown + oxc，顶层的 minify 只做变量改名、不压空白；
