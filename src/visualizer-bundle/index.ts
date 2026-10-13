@@ -10,6 +10,7 @@ import {
   FoliaBackgroundPanel,
   FoliaBackgroundQuickControls,
   FoliaModePanel,
+  withBackgroundTuning,
   type FoliaBackgroundPanelProps,
   type FoliaBackgroundQuickControlsProps,
   type FoliaModePanelProps,
