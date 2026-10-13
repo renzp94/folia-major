@@ -56,6 +56,32 @@ export type FoliaModePanelProps = {
 };
 
 /**
+ * 面板渲染出错时别默默消失：React 遇到渲染期异常会卸掉整棵子树，容器只剩空白 ——
+ * 在宿主里看起来就像"这个背景没有参数"。把错误摆出来，至少知道是谁的锅。
+ */
+class PanelBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return React.createElement(
+        'div',
+        { style: { fontSize: 12, lineHeight: 1.6, opacity: 0.8, color: '#e5484d', padding: '2px 0' } },
+        `面板渲染失败：${String(this.state.error?.message ?? this.state.error)}`,
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/**
  * 按模式渲染 Folia 原版的参数面板。
  *
  * 上游面板的输入是一组**按模式命名**的 props（`classicTuning` / `onClassicTuningChange`…），
@@ -82,7 +108,7 @@ export const FoliaModePanel: React.FC<FoliaModePanelProps> = ({
     [`${mode}Tuning`]: tuning,
     [`on${capitalized}TuningChange`]: onTuningChange,
   };
-  return React.createElement(Panel, props);
+  return React.createElement(PanelBoundary, null, React.createElement(Panel, props));
 };
 
 // ── 背景设置（上游把背景也做成一套带面板的模式，与视觉模式平行）───────────────
@@ -129,7 +155,11 @@ export const FoliaBackgroundPanel: React.FC<FoliaBackgroundPanelProps> = ({
     controlCardBg: 'transparent',
     rangeInputClass: '',
   } as VisualizerBackgroundSettingsProps;
-  return React.createElement(React.Fragment, null, entry.renderSettingsPanel(props));
+  return React.createElement(
+    PanelBoundary,
+    null,
+    React.createElement(React.Fragment, null, entry.renderSettingsPanel(props)),
+  );
 };
 
 export type FoliaBackgroundQuickControlsProps = {
@@ -160,5 +190,9 @@ export const FoliaBackgroundQuickControls: React.FC<FoliaBackgroundQuickControls
   const entry = getVisualizerBackgroundRegistryEntry(mode as never);
   if (!entry?.renderQuickControls) return null;
   const props = { config, actions, isDaylight, theme, t } as VisualizerBackgroundQuickControlsProps;
-  return React.createElement(React.Fragment, null, entry.renderQuickControls(props));
+  return React.createElement(
+    PanelBoundary,
+    null,
+    React.createElement(React.Fragment, null, entry.renderQuickControls(props)),
+  );
 };
