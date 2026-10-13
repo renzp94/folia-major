@@ -9,7 +9,7 @@ const stub = (name: string) => path.resolve(__dirname, './src/visualizer-bundle/
 // 产物必须自包含（React/framer-motion 都打进去），所以不设 rollupOptions.external。
 export default defineConfig({
   plugins: [react()],
-  // 宿主渲染进程是隔离环境，没有 process / Node 全局。第三方库（framer-motion 等）会直接读
+  // EchoMusic 的渲染进程是隔离环境，没有 process / Node 全局。第三方库（framer-motion 等）会直接读
   // `process.env.NODE_ENV`，不替换掉就会在 import() 时抛 "process is not defined"。
   // 注意两者都要给：长键优先替换 NODE_ENV 为 "production"（否则会走 dev 分支），
   // 其余 `process.env.X` 落到空对象上为 undefined。
