@@ -17,6 +17,14 @@ const lookup = (key: string): string => {
 
 const translate = (key: string, options?: TOptions): string => {
   if (typeof options === 'string') return options;
+  // 上游的 i18next 遇到空 key 返回空串，不会抛。桩必须一样：某些面板会写
+  // `t(LABEL_KEYS[tuning.someField])`，一旦那个字段缺了就会传进 undefined ——
+  // 这里跟着抛的话，整块面板（连带快捷控制）会一起消失，且只在那种状态下复现。
+  if (typeof key !== 'string' || key === '') {
+    return (options && typeof options === 'object' && typeof options.defaultValue === 'string')
+      ? options.defaultValue
+      : '';
+  }
   // 词条优先：面板里用的是 i18n key，有中文就显示中文。
   const text = lookup(key);
   if (text) return text;
