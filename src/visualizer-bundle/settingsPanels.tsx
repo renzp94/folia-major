@@ -3,7 +3,12 @@ import {
   VISUALIZER_BACKGROUND_REGISTRY,
   getVisualizerBackgroundRegistryEntry,
 } from './backgroundRegistry';
-import type { VisualizerBackgroundSettingsProps } from '@/components/visualizer/backgrounds/definition';
+import type {
+  VisualizerBackgroundQuickControlsProps,
+  VisualizerBackgroundSettingsProps,
+} from '@/components/visualizer/backgrounds/definition';
+// 面板文案是 i18n key；这里的 t 会去查 Folia 自带的中文词条（见 stubs/i18n.ts）。
+import { useTranslation } from './stubs/i18n';
 // 共享面板文件里放着 7 个模式的面板
 import {
   ClassicSettingsPanel,
@@ -64,11 +69,12 @@ export const FoliaModePanel: React.FC<FoliaModePanelProps> = ({
   isDaylight = false,
   theme,
 }) => {
+  const { t } = useTranslation();
   const Panel = PANELS[mode];
   if (!Panel) return null;
   const capitalized = mode.charAt(0).toUpperCase() + mode.slice(1);
   const props: Record<string, unknown> = {
-    t: (key: string) => key,
+    t,
     isDaylight,
     theme,
     controlCardBg: 'transparent',
@@ -111,6 +117,7 @@ export const FoliaBackgroundPanel: React.FC<FoliaBackgroundPanelProps> = ({
   isDaylight = false,
   theme,
 }) => {
+  const { t } = useTranslation();
   const entry = getVisualizerBackgroundRegistryEntry(mode as never);
   if (!entry?.renderSettingsPanel) return null;
   const props = {
@@ -118,9 +125,40 @@ export const FoliaBackgroundPanel: React.FC<FoliaBackgroundPanelProps> = ({
     actions,
     isDaylight,
     theme,
-    t: (key: string) => key,
+    t,
     controlCardBg: 'transparent',
     rangeInputClass: '',
   } as VisualizerBackgroundSettingsProps;
   return React.createElement(React.Fragment, null, entry.renderSettingsPanel(props));
+};
+
+export type FoliaBackgroundQuickControlsProps = {
+  mode: string;
+  /** 与 FoliaBackgroundPanel 同一份 config —— 渲染、设置面板、快捷控制共用。 */
+  config?: unknown;
+  actions?: unknown;
+  isDaylight?: boolean;
+  theme?: unknown;
+};
+
+/**
+ * 背景行右侧的快捷控制。
+ *
+ * 上游把它挂在 `AppearanceSection` 里背景那一行的 `trailing` 位置：各背景自己提供一个
+ * 可点击循环的芯片 —— 隐现是「像素 / 网格 / 混合」，漫游是「可读性叠色」开关，
+ * 空是「完全空白」，通用是「添加封面色彩」，莫奈是版式切换。
+ * 没有 `renderQuickControls` 的背景返回 null（那一行就只显示箭头和下拉）。
+ */
+export const FoliaBackgroundQuickControls: React.FC<FoliaBackgroundQuickControlsProps> = ({
+  mode,
+  config,
+  actions,
+  isDaylight = false,
+  theme,
+}) => {
+  const { t } = useTranslation();
+  const entry = getVisualizerBackgroundRegistryEntry(mode as never);
+  if (!entry?.renderQuickControls) return null;
+  const props = { config, actions, isDaylight, theme, t } as VisualizerBackgroundQuickControlsProps;
+  return React.createElement(React.Fragment, null, entry.renderQuickControls(props));
 };

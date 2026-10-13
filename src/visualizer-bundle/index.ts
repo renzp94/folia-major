@@ -8,17 +8,21 @@ import '@/index.css';
 export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './folioTuning';
 import {
   FoliaBackgroundPanel,
+  FoliaBackgroundQuickControls,
   FoliaModePanel,
   type FoliaBackgroundPanelProps,
+  type FoliaBackgroundQuickControlsProps,
   type FoliaModePanelProps,
 } from './settingsPanels';
 export {
   FoliaModePanel,
   listPanelModes,
   FoliaBackgroundPanel,
+  FoliaBackgroundQuickControls,
   listBackgroundModes,
   type FoliaModePanelProps,
   type FoliaBackgroundPanelProps,
+  type FoliaBackgroundQuickControlsProps,
 } from './settingsPanels';
 
 export type VisualizerBundleProps = {
@@ -105,6 +109,28 @@ export const unmountBackgroundPanel = (): void => {
   bgPanelRoot?.unmount();
   bgPanelRoot = null;
   bgPanelEl = null;
+};
+
+// 背景行的快捷控制（背景那一行右侧的芯片）又是一个独立 root。
+let quickRoot: Root | null = null;
+let quickEl: HTMLElement | null = null;
+
+export const mountBackgroundQuickControls = (
+  el: HTMLElement,
+  props: FoliaBackgroundQuickControlsProps,
+): void => {
+  if (!quickRoot || quickEl !== el) {
+    quickRoot?.unmount();
+    quickRoot = createRoot(el);
+    quickEl = el;
+  }
+  quickRoot.render(React.createElement(FoliaBackgroundQuickControls, props));
+};
+
+export const unmountBackgroundQuickControls = (): void => {
+  quickRoot?.unmount();
+  quickRoot = null;
+  quickEl = null;
 };
 
 import { motionValue as fmMotionValue } from 'framer-motion';
