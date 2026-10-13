@@ -130,7 +130,11 @@ const LatentBackground: React.FC<LatentBackgroundProps> = ({
     const meshLayerRef = useRef<HTMLDivElement | null>(null);
     const pausedRef = useRef(paused);
     const [coverColors, setCoverColors] = useState<string[]>([]);
-    const tuning = tuningOverride ?? DEFAULT_LATENT_BACKGROUND_TUNING;
+    // 必须与默认值合并，不能只在整体为空时兜底：快捷控制类调用方（如本插件的背景行
+    // 芯片）回传的是**增量**，tuningOverride 会变成 `{ displayMode: 'dithering' }`
+    // 这种残缺对象，其余字段全 undefined，shader 直接失效（背景整块不画）。
+    // 同目录的 NomandBackgroundLayer 就是这么写的。
+    const tuning = { ...DEFAULT_LATENT_BACKGROUND_TUNING, ...tuningOverride };
     const showDithering = tuning.displayMode !== 'mesh';
     const showMesh = tuning.displayMode !== 'dithering';
     pausedRef.current = paused;

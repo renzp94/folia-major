@@ -67,11 +67,15 @@ const MonetBackgroundLayer: React.FC<MonetBackgroundLayerProps> = ({
     monetBackgroundImage,
     theme,
     isDaylight = false,
-    tuning = DEFAULT_MONET_BACKGROUND_TUNING,
+    tuning: tuningOverride,
     transparentBackground = false,
     staticMode = false,
 }) => {
     const [pipelineUrl, setPipelineUrl] = useState<string | null>(null);
+    // 与默认值合并而不是整体兜底：快捷控制类调用方（背景行的芯片）回传的是**增量**，
+    // 解构默认只在整体 undefined 时生效，残缺对象会让其余字段全变 undefined。
+    // 同目录的 NomandBackgroundLayer 就是这么处理的。
+    const tuning = { ...DEFAULT_MONET_BACKGROUND_TUNING, ...tuningOverride };
     const sourceUrl = resolveSourceUrl(coverUrl, monetBackgroundImage, tuning);
 
     const fallbackGradient = useMemo(
