@@ -4,6 +4,7 @@ import type { MotionValue } from 'framer-motion';
 import { getEntry } from './registry';
 import { applyVisualizerTuning, type VisualizerTuningBundle } from './folioTuning';
 import { installAudioSources } from './stubs/motionSignals';
+import VisualizerHarmonyOverlay from '@/components/visualizer/VisualizerHarmonyOverlay';
 import type { AudioBands } from '../../types';
 import '@/index.css';
 
@@ -55,12 +56,24 @@ const BundleRenderer: React.FC<VisualizerBundleProps> = ({ mode, ...props }) => 
     { ...props, background: withBackgroundTuning(props.background?.mode, props.background) } as never,
     props.visualizerTunings,
   );
-  return React.createElement(
-    // entry.render 里包着 React.lazy，Suspense 边界是必需的（见 definition.ts 的说明）
-    React.Suspense,
-    { fallback: null },
-    getEntry(mode).render(resolved as never),
-  );
+  // 上游 VisualizerRenderer 渲染的是**两块**：模式渲染器 + 和声/翻译字幕浮层。
+  // 之前只渲染了前者，等于少了 TTML 背景和声与翻译字幕（showText / subtitleTheme /
+  // subtitleFontScale 这些字段也是喂给它的，所以此前根本没有消费方）。
+  return React.createElement(React.Fragment, null, [
+    React.createElement(
+      // entry.render 里包着 React.lazy，Suspense 边界是必需的（见 definition.ts 的说明）
+      React.Suspense,
+      { key: 'mode', fallback: null },
+      getEntry(mode).render(resolved as never),
+    ),
+    React.createElement(VisualizerHarmonyOverlay, {
+      key: 'harmony',
+      currentTime: props.currentTime,
+      lines: props.lines as never,
+      showText: props.showText ?? true,
+      theme: props.theme as never,
+    }),
+  ]);
 };
 
 let root: Root | null = null;
