@@ -3,6 +3,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { MotionValue } from 'framer-motion';
 import { getEntry } from './registry';
 import { applyVisualizerTuning, type VisualizerTuningBundle } from './folioTuning';
+import { installAudioSources } from './stubs/motionSignals';
+import type { AudioBands } from '../../types';
 import '@/index.css';
 
 export { applyVisualizerTuning, getVisualizerTuningModes, getTuningSettingsKey } from './folioTuning';
@@ -65,6 +67,10 @@ let root: Root | null = null;
 let rootEl: HTMLElement | null = null;
 
 export const mountVisualizer = (el: HTMLElement, props: VisualizerBundleProps): void => {
+  // 把宿主那份音频装进 motionSignals 桩：各视觉模式走 useVisualizerRendererModel 读的是
+  // 那个模块，光靠 props 只喂得到背景层（症状就是背景跟节奏、柱形三角一动不动）。
+  installAudioSources({ audioPower: props.audioPower, audioBands: props.audioBands as AudioBands });
+
   // 复用已有 root：宿主每前进一行就调一次本函数，若每次 createRoot 会反复销毁
   // 重建整棵 React 树（动画重来、后续 WebGL 模式上下文 churn）。容器换了才重建。
   if (!root || rootEl !== el) {
