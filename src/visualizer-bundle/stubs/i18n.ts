@@ -14,7 +14,7 @@
 //    明确选择，不该再往下兜底。
 import zhCN from '@/i18n/locales/zh-CN';
 
-type TOptions = { defaultValue?: string } | string | undefined;
+type TOptions = { defaultValue?: string; [key: string]: unknown } | string | undefined;
 
 /** 宿主注入的文案覆盖表，键是 i18n key（如 `ui.waitingForMusic`）。 */
 const OVERRIDES_KEY = '__FOLIA_I18N_OVERRIDES__';
@@ -38,6 +38,19 @@ const lookup = (key: string): string | undefined => {
   return typeof node === 'string' ? node : undefined;
 };
 
+/**
+ * 补上 i18next 的 `{{var}}` 插值 —— 桩此前只返回词条原文，于是带变量的词条会显示
+ * 字面量（Tempera 的画布图片操作会渲染出「已导出 {{count}} 张图片」）。
+ * 未提供的变量保留原样，与 i18next 的默认行为一致。
+ */
+const interpolate = (text: string, options?: TOptions): string => {
+  if (!options || typeof options !== 'object') return text;
+  return text.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (match, name: string) => {
+    const value = (options as Record<string, unknown>)[name];
+    return value === undefined || value === null ? match : String(value);
+  });
+};
+
 const translate = (key: string, options?: TOptions): string => {
   if (typeof options === 'string') return options;
   // 上游的 i18next 遇到空 key 返回空串，不会抛。桩必须一样：某些面板会写
@@ -50,9 +63,9 @@ const translate = (key: string, options?: TOptions): string => {
   }
   // 词条优先：面板里用的是 i18n key，有中文就显示中文。
   const text = lookup(key);
-  if (text !== undefined) return text;
+  if (text !== undefined) return interpolate(text, options);
   if (options && typeof options === 'object' && typeof options.defaultValue === 'string') {
-    return options.defaultValue;
+    return interpolate(options.defaultValue, options);
   }
   // 实在没有：退到 key 末段，至少不会渲染出 "ui.backToHome" 这种原始键。
   const tail = key.split('.').pop();
